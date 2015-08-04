@@ -22,11 +22,11 @@
   :init-value nil
   :lighter " stlc"
   :keymap (make-keymap)
-  (when my-se-mode
+  (when stlc-mode
     (se-inf-start
       (start-process "stlc-mode" "*stlc-mode*"
        "/home/astump/stlc/stlc.sh" )))
-  (unless my-se-mode
+  (unless stlc-mode
     (se-inf-stop)))
 
 (define-key stlc-mode-map (kbd "M-s") #'se-navigation-mode)
