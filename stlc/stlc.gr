@@ -1,0 +1,50 @@
+stlc
+
+Start
+
+start
+
+Syntactic
+
+Cmds : start -> ows cmds ows .
+CmdsStart : cmds -> cmd .
+CmdsNext : cmds -> cmd ws cmds .
+
+DefCheck : cmd -> ! var ows '=' ows term ows '⇐' ows type ows '.' ! .
+DefSynth : cmd -> ! var ows '=' ows term ows '.' ! .
+DefTp : cmd -> ! var ows '=type' ows type ows '.' ! .
+
+Lam : term -> 'λ' ows var ows '.' ows term .
+App : term -> term ws term .
+Paren : term -> '(' ows term ows ')' . 
+Ascribe : term -> '[' ows term ows ':' ows type ows ']'.
+Var : term -> var .
+Hole : term -> '●'.
+
+Arrow : type -> type ows '→' ows type.
+TpVar : type -> var.
+TpParens : type -> '(' ows type ows ')' .
+
+Lexical
+
+varone -> ['a' - 'z'] | ['A' - 'Z'] | quote | '-' | ['0' - '9'].
+
+var -> varone+ .
+
+anychar => varone | '\t' | space | '%' | '∷' | 'λ' | '→' | ':' | '.' | '(' | ')' | '●'.
+
+comment => '%' anychar* '\n'.
+
+aws => ('\n' | '\t' | space | comment).
+ws => aws+.
+ows => aws* .
+
+Vars
+  b w x y z zz
+
+Rules
+  App(x,App(y,z)) -> App(App(x,y),z)
+  App(Lam(x,y), z) -> Lam(x,App(y,z))
+  App(App(w, Lam(x,y)), z) -> App(w, Lam(x,App(y, z)))
+
+  Arrow(Arrow(x,y),z) -> Arrow(x,Arrow(y,z))

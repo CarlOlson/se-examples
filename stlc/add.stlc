@@ -1,0 +1,9 @@
+Nat0 =type (b → b) → (b → b) .
+Nat1 =type (Nat0 → Nat0) → (Nat0 → Nat0) .
+
+Z = λ s . λ z . z ⇐ Nat0.
+S = λ n . λ s . λ z . s (n s z) ⇐ Nat0 → Nat0.
+
+
+add = λ n . λ m . n S m ⇐ Nat1 → Nat0 → Nat0.
+
