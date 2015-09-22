@@ -21,7 +21,7 @@ process-cmds (CmdsNext c cs) = process-cmd c ^ "," ^ process-cmds cs
 process-cmds (CmdsStart c) = process-cmd c
 
 process-start : start → string
-process-start (Cmds cs) = "[" ^ process-cmds cs ^ "]\n"
+process-start (Cmds cs) = "{\"spans\":[" ^ process-cmds cs ^ "]}\n"
 
 process : Run → string
 process (ParseTree (parsed-start p) :: []) = process-start p
