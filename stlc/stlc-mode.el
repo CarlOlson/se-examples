@@ -2,54 +2,45 @@
 
 ;;; Commentary:
 
-;;
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Dependency
-
 
 ;;; Code:
 
 (require 'quail)
 
-;(require 'se-mode)
+(require 'se-mode)
 
 (defvar stlc-version "0.1"
   "The version of the stlc mode.")
 
-(define-minor-mode stlc-mode
-  "Documentation."
-  :init-value nil
-  :lighter " stlc"
-  :keymap (make-keymap)
-  (when stlc-mode
-    (se-inf-start
-      (start-process "stlc-mode" "*stlc-mode*"
-       "/home/astump/stlc/stlc.sh" )))
-  (unless stlc-mode
-    (se-inf-stop)))
+(defvar stlc-program-name "stlc"
+  "Program to run for stlc mode.")
 
-(define-key stlc-mode-map (kbd "M-s") #'se-navigation-mode)
+;; keep emacs version <24 compatability
+(defalias 'stlc-parent-mode
+  (if (fboundp 'prog-mode) 'prog-mode 'fundamental-mode))
 
-(setq auto-mode-alist (cons (cons "\\.stlc\\'" 'stlc-mode) auto-mode-alist))
-
-(modify-coding-system-alist 'file "\\.stlc\\'" 'utf-8)
-
-(with-temp-buffer
-    (quail-define-package "Stlc" "UTF-8" "δ" t ; guidance
-     "Stlc input method."
-     nil nil nil nil nil nil t ; maximum-shortest
-     ))
-
-(eval `(define-derived-mode stlc-mode
-  ,(if (fboundp 'prog-mode) 'prog-mode)
+(define-derived-mode stlc-mode stlc-parent-mode
   "Stlc"
   "Major mode for Stlc files."
 
- (set-input-method "Stlc")
- (mapc (lambda (pair) (quail-defrule (car pair) (cadr pair) "Stlc"))
-	'(("\\l" "λ") ("\\r" "→") ("\\h" "●") ("\\f" "⇐")))
-))
+  (set-input-method "Stlc")
+  (quail-define-rules
+   ("\\l" "λ") ("\\r" "→") ("\\h" "●") ("\\f" "⇐"))
+
+  (se-mode)
+  (se-inf-start
+   (start-process "stlc-mode" "*stlc-mode*" stlc-program-name))
+  (add-hook 'se-navigation-mode-hook #'se-inf-parse-file nil t))
+
+(add-to-list 'auto-mode-alist (cons "\\.stlc\\'" 'stlc-mode))
+
+(modify-coding-system-alist 'file "\\.stlc\\'" 'utf-8)
+
+(quail-define-package "Stlc" "UTF-8" "δ" t ; guidance
+		      "Stlc input method."
+		      nil nil nil nil nil nil t) ; maximum-shortest
 
 (provide 'stlc-mode)
 ;;; stlc-mode.el ends here
