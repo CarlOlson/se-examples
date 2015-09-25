@@ -11,10 +11,17 @@ open parsem.pnoderiv stlc.rrs stlc.stlc-rtn
 open import run ptr
 open noderiv {- from run.agda -}
 
+compose-span : string → string → string → string
+compose-span name start end = "[\"" ^ name ^ "\"," ^ start ^ "," ^ end ^ "]"
+
 process-cmd : cmd → string
-process-cmd (DefCheck i1 x trm tp i2) = "[\"DefCheck\"," ^ i1 ^ "," ^ i2 ^ "]"
-process-cmd (DefSynth i1 x trm i2) = "[\"DefSynth\"," ^ i1 ^ "," ^ i2 ^ "]"
-process-cmd (DefTp i1 x tp i2) = "[\"DefTp\"," ^ i1 ^ "," ^ i2 ^ "]"
+process-cmd (DefCheck i1 x trm tp i2) with trm
+... | (Hole hi1 hi2) = compose-span "DefCheck" i1 i2 ^ "," ^ compose-span "Hole" hi1 hi2
+... | _ = compose-span "DefCheck" i1 i2
+process-cmd (DefSynth i1 x trm i2) with trm
+... | (Hole hi1 hi2) = compose-span "DefSynth" i1 i2 ^ "," ^ compose-span "Hole" hi1 hi2
+... | _ = compose-span "DefSynth" i1 i2
+process-cmd (DefTp i1 x tp i2) = compose-span "DefTp" i1 i2
 
 process-cmds : cmds → string
 process-cmds (CmdsNext c cs) = process-cmd c ^ "," ^ process-cmds cs
