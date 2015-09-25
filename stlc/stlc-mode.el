@@ -29,6 +29,8 @@
   (quail-define-rules
    ("\\l" "λ") ("\\r" "→") ("\\h" "●") ("\\f" "⇐"))
 
+  (setq-local comment-start "%")
+  
   (se-mode)
   (se-inf-start
    (start-process "stlc-mode" "*stlc-mode*" stlc-program-name))
