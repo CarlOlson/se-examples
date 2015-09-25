@@ -36,7 +36,7 @@ mutual
   data term : Set where 
     App : term → term → term
     Ascribe : term → type → term
-    Hole : term
+    Hole : posinfo → posinfo → term
     Lam : var → term → term
     Paren : term → term
     Var : var → term
@@ -76,17 +76,19 @@ data ParseTreeT : Set where
   parsed-anychar-bar-17 : ParseTreeT
   parsed-anychar-bar-18 : ParseTreeT
   parsed-anychar-bar-19 : ParseTreeT
+  parsed-anychar-bar-20 : ParseTreeT
+  parsed-anychar-bar-21 : ParseTreeT
   parsed-anychar-bar-9 : ParseTreeT
   parsed-aws : ParseTreeT
-  parsed-aws-bar-21 : ParseTreeT
-  parsed-aws-bar-22 : ParseTreeT
   parsed-aws-bar-23 : ParseTreeT
+  parsed-aws-bar-24 : ParseTreeT
+  parsed-aws-bar-25 : ParseTreeT
   parsed-comment : ParseTreeT
-  parsed-comment-star-20 : ParseTreeT
+  parsed-comment-star-22 : ParseTreeT
   parsed-ows : ParseTreeT
-  parsed-ows-star-25 : ParseTreeT
+  parsed-ows-star-27 : ParseTreeT
   parsed-ws : ParseTreeT
-  parsed-ws-plus-24 : ParseTreeT
+  parsed-ws-plus-26 : ParseTreeT
 
 ------------------------------------------
 -- Parse tree printing functions
@@ -131,7 +133,7 @@ mutual
   termToString : term → string
   termToString (App x0 x1) = "(App" ^ " " ^ (termToString x0) ^ " " ^ (termToString x1) ^ ")"
   termToString (Ascribe x0 x1) = "(Ascribe" ^ " " ^ (termToString x0) ^ " " ^ (typeToString x1) ^ ")"
-  termToString (Hole) = "Hole" ^ ""
+  termToString (Hole x0 x1) = "(Hole" ^ " " ^ (posinfoToString x0) ^ " " ^ (posinfoToString x1) ^ ")"
   termToString (Lam x0 x1) = "(Lam" ^ " " ^ (varToString x0) ^ " " ^ (termToString x1) ^ ")"
   termToString (Paren x0) = "(Paren" ^ " " ^ (termToString x0) ^ ")"
   termToString (Var x0) = "(Var" ^ " " ^ (varToString x0) ^ ")"
@@ -169,17 +171,19 @@ ParseTreeToString parsed-anychar-bar-16 = "[anychar-bar-16]"
 ParseTreeToString parsed-anychar-bar-17 = "[anychar-bar-17]"
 ParseTreeToString parsed-anychar-bar-18 = "[anychar-bar-18]"
 ParseTreeToString parsed-anychar-bar-19 = "[anychar-bar-19]"
+ParseTreeToString parsed-anychar-bar-20 = "[anychar-bar-20]"
+ParseTreeToString parsed-anychar-bar-21 = "[anychar-bar-21]"
 ParseTreeToString parsed-anychar-bar-9 = "[anychar-bar-9]"
 ParseTreeToString parsed-aws = "[aws]"
-ParseTreeToString parsed-aws-bar-21 = "[aws-bar-21]"
-ParseTreeToString parsed-aws-bar-22 = "[aws-bar-22]"
 ParseTreeToString parsed-aws-bar-23 = "[aws-bar-23]"
+ParseTreeToString parsed-aws-bar-24 = "[aws-bar-24]"
+ParseTreeToString parsed-aws-bar-25 = "[aws-bar-25]"
 ParseTreeToString parsed-comment = "[comment]"
-ParseTreeToString parsed-comment-star-20 = "[comment-star-20]"
+ParseTreeToString parsed-comment-star-22 = "[comment-star-22]"
 ParseTreeToString parsed-ows = "[ows]"
-ParseTreeToString parsed-ows-star-25 = "[ows-star-25]"
+ParseTreeToString parsed-ows-star-27 = "[ows-star-27]"
 ParseTreeToString parsed-ws = "[ws]"
-ParseTreeToString parsed-ws-plus-24 = "[ws-plus-24]"
+ParseTreeToString parsed-ws-plus-26 = "[ws-plus-26]"
 
 ------------------------------------------
 -- Reorganizing rules

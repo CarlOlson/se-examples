@@ -19,7 +19,7 @@ App : term -> term ws term .
 Paren : term -> '(' ows term ows ')' . 
 Ascribe : term -> '[' ows term ows ':' ows type ows ']'.
 Var : term -> var .
-Hole : term -> '●'.
+Hole : term -> ! '●' !.
 
 Arrow : type -> type ows '→' ows type.
 TpVar : type -> var.
@@ -31,7 +31,7 @@ varone -> ['a' - 'z'] | ['A' - 'Z'] | quote | '-' | ['0' - '9'].
 
 var -> varone+ .
 
-anychar => varone | '\t' | space | '%' | '∷' | 'λ' | '→' | ':' | '.' | '(' | ')' | '●'.
+anychar => varone | '\t' | space | '%' | '∷' | 'λ' | '→' | ':' | '.' | '(' | ')' | '●' | '=' | '⇐'.
 
 comment => '%' anychar* '\n'.
 
