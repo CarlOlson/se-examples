@@ -11,6 +11,18 @@ open parsem.pnoderiv stlc.rrs stlc.stlc-rtn
 open import run ptr
 open noderiv {- from run.agda -}
 
+escape-string-h : 𝕃 char → 𝕃 char
+escape-string-h ('\n' :: cs) = '\\' :: 'n' :: (escape-string-h cs)
+escape-string-h ('"' :: cs) = '\\' :: '"' :: (escape-string-h cs)
+escape-string-h (c :: cs) = c :: escape-string-h cs
+escape-string-h [] = []
+
+escape-string : string → string
+escape-string s = 𝕃char-to-string( escape-string-h( string-to-𝕃char s ) )
+
+compose-error : string → string
+compose-error msg = "{\"error\":\"" ^ escape-string(msg) ^ "\"}\n"
+
 compose-span : string → string → string → string
 compose-span name start end = "[\"" ^ name ^ "\"," ^ start ^ "," ^ end ^ "]"
 
@@ -32,7 +44,7 @@ process-start (Cmds cs) = "{\"spans\":[" ^ process-cmds cs ^ "]}\n"
 
 process : Run → string
 process (ParseTree (parsed-start p) :: []) = process-start p
-process r = "Parsing failure (run with -" ^ "-showParsed).\n"
+process r = compose-error("Parsing failure (run with -" ^ "-showParsed).\n")
 
 putStrRunIf : 𝔹 → Run → IO ⊤
 putStrRunIf tt r = putStr (Run-to-string r) >> putStr "\n"
@@ -43,7 +55,8 @@ processArgs showRun showParsed (input-filename :: []) = (readFiniteFile input-fi
   where processText : string → IO ⊤
         processText x with runRtn (string-to-𝕃char x)
         processText x | s with s
-        processText x | s | inj₁ cs = putStr "Characters left before failure : " >> putStr (𝕃char-to-string cs) >> putStr "\nCannot proceed to parsing.\n"
+        processText x | s | inj₁ cs = putStr( compose-error(
+                    "Characters left before failure : " ^ (𝕃char-to-string cs) ^ "\nCannot proceed to parsing.\n" ) )
         processText x | s | inj₂ r with putStrRunIf showRun r | rewriteRun r
         processText x | s | inj₂ r | sr | r' with putStrRunIf showParsed r'
         processText x | s | inj₂ r | sr | r' | sr' = sr >> sr' >> putStr (process r')
