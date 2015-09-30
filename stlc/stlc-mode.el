@@ -33,7 +33,8 @@
   
   (se-mode)
   (se-inf-start
-   (start-process "stlc-mode" "*stlc-mode*" stlc-program-name))
+   (or (get-buffer-process "*stlc-mode*") ;; reuse if existing process
+       (start-process "stlc-mode" "*stlc-mode*" stlc-program-name)))
   (add-hook 'se-navigation-mode-hook #'se-inf-parse-file nil t))
 
 (add-to-list 'auto-mode-alist (cons "\\.stlc\\'" 'stlc-mode))
