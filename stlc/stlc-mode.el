@@ -35,7 +35,7 @@
   (se-inf-start
    (or (get-buffer-process "*stlc-mode*") ;; reuse if existing process
        (start-process "stlc-mode" "*stlc-mode*" stlc-program-name)))
-  (add-hook 'se-navigation-mode-hook #'se-inf-parse-file nil t))
+  (add-hook 'se-navigation-mode-hook #'stlc-parse-file nil t))
 
 (add-to-list 'auto-mode-alist (cons "\\.stlc\\'" 'stlc-mode))
 
@@ -44,6 +44,13 @@
 (quail-define-package "Stlc" "UTF-8" "δ" t ; guidance
 		      "Stlc input method."
 		      nil nil nil nil nil nil t) ; maximum-shortest
+
+(defun stlc-parse-file ()
+  "Only parse when navigation mode is active. This prevents the
+navigation mode hook from calling `se-inf-parse-file' when
+deactivating."
+  (when se-navigation-mode
+    (se-inf-parse-file)))
 
 (provide 'stlc-mode)
 ;;; stlc-mode.el ends here
