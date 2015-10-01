@@ -26,17 +26,21 @@ compose-error msg = "{\"error\":\"" ^ escape-string(msg) ^ "\"}\n"
 tagged-val : Set
 tagged-val = string × string
 
+tagged-val-to-string : tagged-val → string
+tagged-val-to-string (tag , val) = tag ^ ":" ^ val
+
 data span : Set where
   mk-span : string → posinfo → posinfo → 𝕃 tagged-val {- extra information for the span -} → span
 
+
 span-to-string : span → string
-span-to-string (mk-span name start end extra) = "[\"" ^ name ^ "\"," ^ start ^ "," ^ end ^ ",{" ^ h extra ^ "}]"
-  where h : 𝕃 tagged-val → string
-        h [] = ""
-        h ((tag , val) :: ts) = tag ^ ":" ^ val ^ h ts
+span-to-string (mk-span name start end extra) = 
+  "[\"" ^ name ^ "\"," ^ start ^ "," ^ end ^ ",{" 
+        ^ string-concat-sep-map "," tagged-val-to-string extra ^ "}]"
+
 
 spans-to-string : 𝕃 span → string
-spans-to-string ss = string-concat-sep "," (map span-to-string ss)
+spans-to-string = string-concat-sep-map "," span-to-string 
 
 data ctxt : Set where
   mk-ctxt : trie type → 𝕃 span → ctxt
@@ -46,6 +50,25 @@ empty-ctxt = mk-ctxt empty-trie []
 
 add-span : span → ctxt → ctxt
 add-span s (mk-ctxt T ss) = mk-ctxt T (s :: ss)
+
+ctxtm : Set → Set
+ctxtm A = ctxt → A × ctxt
+
+ctxtm-return : ∀{A : Set} → A → ctxtm A
+ctxtm-return a = λ c → a , c
+
+ctxtm-bind : ∀{A B : Set} → ctxtm A → (A → ctxtm B) → ctxtm B
+ctxtm-bind m1 f Γ with m1 Γ
+ctxtm-bind m1 f _ | a , Γ = f a Γ
+
+{-
+ctxtm-add-span : ∀{A : Set} → span → ctxtm A → ctxtm A
+ctxtm-add-span s m Γ = m (add-span s Γ)
+
+ctxtm-lookup : var → ctxtm A → 
+--synth-term : term → ctxtm type
+--check-term : term → type → ctxtm ⊤ 
+-}
 
 process-cmd : ctxt → cmd → ctxt
 process-cmd Γ (DefCheck i1 x trm tp i2) = add-span (mk-span "DefCheck" i1 i2 []) Γ
