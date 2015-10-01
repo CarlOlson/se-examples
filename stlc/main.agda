@@ -23,24 +23,42 @@ escape-string s = 𝕃char-to-string( escape-string-h( string-to-𝕃char s ) )
 compose-error : string → string
 compose-error msg = "{\"error\":\"" ^ escape-string(msg) ^ "\"}\n"
 
-compose-span : string → string → string → string
-compose-span name start end = "[\"" ^ name ^ "\"," ^ start ^ "," ^ end ^ "]"
+tagged-val : Set
+tagged-val = string × string
 
-process-cmd : cmd → string
-process-cmd (DefCheck i1 x trm tp i2) with trm
-... | (Hole hi1 hi2) = compose-span "DefCheck" i1 i2 ^ "," ^ compose-span "Hole" hi1 hi2
-... | _ = compose-span "DefCheck" i1 i2
-process-cmd (DefSynth i1 x trm i2) with trm
-... | (Hole hi1 hi2) = compose-span "DefSynth" i1 i2 ^ "," ^ compose-span "Hole" hi1 hi2
-... | _ = compose-span "DefSynth" i1 i2
-process-cmd (DefTp i1 x tp i2) = compose-span "DefTp" i1 i2
+data span : Set where
+  mk-span : string → posinfo → posinfo → 𝕃 tagged-val {- extra information for the span -} → span
 
-process-cmds : cmds → string
-process-cmds (CmdsNext c cs) = process-cmd c ^ "," ^ process-cmds cs
-process-cmds (CmdsStart c) = process-cmd c
+span-to-string : span → string
+span-to-string (mk-span name start end extra) = "[\"" ^ name ^ "\"," ^ start ^ "," ^ end ^ ",{" ^ h extra ^ "}]"
+  where h : 𝕃 tagged-val → string
+        h [] = ""
+        h ((tag , val) :: ts) = tag ^ ":" ^ val ^ h ts
+
+spans-to-string : 𝕃 span → string
+spans-to-string ss = string-concat-sep "," (map span-to-string ss)
+
+data ctxt : Set where
+  mk-ctxt : trie type → 𝕃 span → ctxt
+
+empty-ctxt : ctxt
+empty-ctxt = mk-ctxt empty-trie []
+
+add-span : span → ctxt → ctxt
+add-span s (mk-ctxt T ss) = mk-ctxt T (s :: ss)
+
+process-cmd : ctxt → cmd → ctxt
+process-cmd Γ (DefCheck i1 x trm tp i2) = add-span (mk-span "DefCheck" i1 i2 []) Γ
+process-cmd Γ (DefSynth i1 x trm i2) = add-span (mk-span "DefSynth" i1 i2 []) Γ
+process-cmd Γ (DefTp i1 x tp i2) = add-span (mk-span "DefTp" i1 i2 []) Γ
+
+process-cmds : ctxt → cmds → ctxt
+process-cmds Γ (CmdsNext c cs) = process-cmds (process-cmd Γ c) cs 
+process-cmds Γ (CmdsStart c) = process-cmd Γ c
 
 process-start : start → string
-process-start (Cmds cs) = "{\"spans\":[" ^ process-cmds cs ^ "]}\n"
+process-start (Cmds cs) with process-cmds empty-ctxt cs
+process-start (Cmds cs) | mk-ctxt T ss = "{\"spans\":[" ^ spans-to-string ss ^ "]}\n"
 
 process : Run → string
 process (ParseTree (parsed-start p) :: []) = process-start p
