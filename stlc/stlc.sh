@@ -1,6 +1,6 @@
 #!/bin/bash
 
 while true ; do
-  read NAME;
+  read NAME || exit
   ./main $NAME
 done
