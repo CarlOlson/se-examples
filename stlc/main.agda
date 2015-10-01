@@ -23,15 +23,15 @@ escape-string s = 𝕃char-to-string( escape-string-h( string-to-𝕃char s ) )
 compose-error : string → string
 compose-error msg = "{\"error\":\"" ^ escape-string(msg) ^ "\"}\n"
 
-tag : Set
-tag = string × string
+tagged-val : Set
+tagged-val = string × string
 
 data span : Set where
-  mk-span : string → posinfo → posinfo → 𝕃 tag {- extra information for the span -} → span
+  mk-span : string → posinfo → posinfo → 𝕃 tagged-val {- extra information for the span -} → span
 
 span-to-string : span → string
 span-to-string (mk-span name start end extra) = "[\"" ^ name ^ "\"," ^ start ^ "," ^ end ^ ",{" ^ h extra ^ "}]"
-  where h : 𝕃 tag → string
+  where h : 𝕃 tagged-val → string
         h [] = ""
         h ((tag , val) :: ts) = tag ^ ":" ^ val ^ h ts
 
