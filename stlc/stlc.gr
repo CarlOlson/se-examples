@@ -14,15 +14,15 @@ DefCheck : cmd -> ! var ows '=' ows term ows '⇐' ows type ows '.' ! .
 DefSynth : cmd -> ! var ows '=' ows term ows '.' ! .
 DefTp : cmd -> ! var ows '=type' ows type ows '.' ! .
 
-Lam : term -> 'λ' ows var ows '.' ows term .
+Lam : term -> ! 'λ' ows var ows '.' ows term .
 App : term -> term ws term .
-Paren : term -> '(' ows term ows ')' . 
-Ascribe : term -> '[' ows term ows ':' ows type ows ']'.
-Var : term -> var .
+Paren : term -> ! '(' ows term ows ')' ! . 
+Ascribe : term -> ! '[' ows term ows ':' ows type ows ']' ! .
+Var : term -> ! var ! .
 Hole : term -> ! '●' !.
 
 Arrow : type -> type ows '→' ows type.
-TpVar : type -> var.
+TpVar : type -> ! var !.
 TpParens : type -> '(' ows type ows ')' .
 
 Lexical
@@ -40,11 +40,11 @@ ws => aws+.
 ows => aws* .
 
 Vars
-  b w x y z zz
+  b w x y z p
 
 Rules
   App(x,App(y,z)) -> App(App(x,y),z)
-  App(Lam(x,y), z) -> Lam(x,App(y,z))
-  App(App(w, Lam(x,y)), z) -> App(w, Lam(x,App(y, z)))
+  App(Lam(p,x,y), z) -> Lam(p,x,App(y,z))
+  App(App(w, Lam(p,x,y)), z) -> App(w, Lam(p,x,App(y, z)))
 
   Arrow(Arrow(x,y),z) -> Arrow(x,Arrow(y,z))

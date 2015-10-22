@@ -52,23 +52,73 @@ add-span : span → ctxt → ctxt
 add-span s (mk-ctxt T ss) = mk-ctxt T (s :: ss)
 
 ctxtm : Set → Set
-ctxtm A = ctxt → A × ctxt
+ctxtm A = ctxt → maybe A × ctxt -- the maybe type is for when there is an error (but the error will get added to a span)
 
 ctxtm-return : ∀{A : Set} → A → ctxtm A
-ctxtm-return a = λ c → a , c
+ctxtm-return a = λ c → just a , c
 
 ctxtm-bind : ∀{A B : Set} → ctxtm A → (A → ctxtm B) → ctxtm B
 ctxtm-bind m1 f Γ with m1 Γ
-ctxtm-bind m1 f _ | a , Γ = f a Γ
+ctxtm-bind m1 f _ | just a , Γ = f a Γ
+ctxtm-bind m1 f _ | nothing , Γ = nothing , Γ
 
-{-
+_≫c_ : ∀{A B : Set} → ctxtm A → (A → ctxtm B) → ctxtm B
+_≫c_ = ctxtm-bind
+
+ctxtm-bind' : ∀{A : Set} → ctxtm ⊤ → ctxtm A → ctxtm A
+ctxtm-bind' m1 m2 Γ with m1 Γ
+ctxtm-bind' m1 m2 _ | _ , Γ = m2 Γ
+
+_≫c'_ : ∀{A : Set} → ctxtm ⊤ → ctxtm A → ctxtm A
+_≫c'_ = ctxtm-bind'
+
+infixr 2 _≫c_ _≫c'_
+
 ctxtm-add-span : ∀{A : Set} → span → ctxtm A → ctxtm A
 ctxtm-add-span s m Γ = m (add-span s Γ)
 
-ctxtm-lookup : var → ctxtm A → 
---synth-term : term → ctxtm type
---check-term : term → type → ctxtm ⊤ 
--}
+ctxtm-declare-var : ∀{A : Set} → var → type → ctxtm ⊤
+ctxtm-declare-var x tp (mk-ctxt T ss) = just triv , (mk-ctxt (trie-insert T x tp) ss)
+
+ctxtm-undeclare-var : ∀{A : Set} → var → ctxtm ⊤
+ctxtm-undeclare-var x (mk-ctxt T ss) = just triv , (mk-ctxt (trie-remove T x) ss)
+
+ctxtm-lookup : posinfo → var → posinfo → ctxtm type
+ctxtm-lookup p1 x p2 (mk-ctxt T ss) with trie-lookup T x 
+ctxtm-lookup p1 x p2 (mk-ctxt T ss) | nothing = 
+  nothing , add-span (mk-span "var" p1 p2 [ "error" , "Undefined variable" ]) (mk-ctxt T ss)
+ctxtm-lookup p1 x p2 (mk-ctxt T ss) | just tp = just tp , (mk-ctxt T ss)
+
+ctxtm-fail : ∀{A : Set} → ctxtm A
+ctxtm-fail Γ = nothing , Γ
+
+ctxtm-&& : ctxtm 𝔹 → ctxtm 𝔹 → ctxtm 𝔹
+ctxtm-&& c1 c2 = c1 ≫c λ b1 → c2 ≫c λ b2 → ctxtm-return (b1 && b2)
+
+{-# NO_TERMINATION_CHECK #-}
+assert-eq : type → type → ctxtm ⊤
+assert-eq t1 (TpParens t2) = assert-eq t1 t2 
+assert-eq (TpParens t1) t2 = assert-eq t1 t2 
+assert-eq (Arrow t1 t2) (Arrow t1' t2') = 
+  assert-eq t1 t1' ≫c' assert-eq t2 t2'
+assert-eq t1 (TpVar p1 x p2) = 
+  ctxtm-lookup p1 x p2 ≫c assert-eq t1 
+assert-eq (TpVar p1 x p2) t1 = ctxtm-lookup p1 x p2 ≫c assert-eq t1
+
+synth-term : term → ctxtm type
+check-term : term → type → ctxtm ⊤ 
+synth-term (App t t₁) = {!!}
+synth-term (Ascribe p1 t tp p2) = {!!}
+synth-term (Hole p1 p2) = {!!}
+synth-term (Lam p x t) = {!!}
+synth-term (Paren p1 t p2) = {!!}
+synth-term (Var p1 x p2) = ctxtm-lookup p1 x p2
+check-term (App t t₁) tp = {!!}
+check-term (Ascribe p1 t tp p2) tp' = {!!}
+check-term (Hole p1 p2) tp = {!!}
+check-term (Lam p x t) tp = {!!}
+check-term (Paren p1 t p2) tp = {!!}
+check-term (Var p1 x p2) tp = ctxtm-lookup p1 x p2 ≫c assert-eq tp
 
 process-cmd : ctxt → cmd → ctxt
 process-cmd Γ (DefCheck i1 x trm tp i2) = add-span (mk-span "DefCheck" i1 i2 []) Γ

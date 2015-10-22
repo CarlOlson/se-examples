@@ -35,16 +35,16 @@ mutual
 
   data term : Set where 
     App : term → term → term
-    Ascribe : term → type → term
+    Ascribe : posinfo → term → type → posinfo → term
     Hole : posinfo → posinfo → term
-    Lam : var → term → term
-    Paren : term → term
-    Var : var → term
+    Lam : posinfo → var → term → term
+    Paren : posinfo → term → posinfo → term
+    Var : posinfo → var → posinfo → term
 
   data type : Set where 
     Arrow : type → type → type
     TpParens : type → type
-    TpVar : var → type
+    TpVar : posinfo → var → posinfo → type
 
 -- embedded types:
 
@@ -132,16 +132,16 @@ mutual
 
   termToString : term → string
   termToString (App x0 x1) = "(App" ^ " " ^ (termToString x0) ^ " " ^ (termToString x1) ^ ")"
-  termToString (Ascribe x0 x1) = "(Ascribe" ^ " " ^ (termToString x0) ^ " " ^ (typeToString x1) ^ ")"
+  termToString (Ascribe x0 x1 x2 x3) = "(Ascribe" ^ " " ^ (posinfoToString x0) ^ " " ^ (termToString x1) ^ " " ^ (typeToString x2) ^ " " ^ (posinfoToString x3) ^ ")"
   termToString (Hole x0 x1) = "(Hole" ^ " " ^ (posinfoToString x0) ^ " " ^ (posinfoToString x1) ^ ")"
-  termToString (Lam x0 x1) = "(Lam" ^ " " ^ (varToString x0) ^ " " ^ (termToString x1) ^ ")"
-  termToString (Paren x0) = "(Paren" ^ " " ^ (termToString x0) ^ ")"
-  termToString (Var x0) = "(Var" ^ " " ^ (varToString x0) ^ ")"
+  termToString (Lam x0 x1 x2) = "(Lam" ^ " " ^ (posinfoToString x0) ^ " " ^ (varToString x1) ^ " " ^ (termToString x2) ^ ")"
+  termToString (Paren x0 x1 x2) = "(Paren" ^ " " ^ (posinfoToString x0) ^ " " ^ (termToString x1) ^ " " ^ (posinfoToString x2) ^ ")"
+  termToString (Var x0 x1 x2) = "(Var" ^ " " ^ (posinfoToString x0) ^ " " ^ (varToString x1) ^ " " ^ (posinfoToString x2) ^ ")"
 
   typeToString : type → string
   typeToString (Arrow x0 x1) = "(Arrow" ^ " " ^ (typeToString x0) ^ " " ^ (typeToString x1) ^ ")"
   typeToString (TpParens x0) = "(TpParens" ^ " " ^ (typeToString x0) ^ ")"
-  typeToString (TpVar x0) = "(TpVar" ^ " " ^ (varToString x0) ^ ")"
+  typeToString (TpVar x0 x1 x2) = "(TpVar" ^ " " ^ (posinfoToString x0) ^ " " ^ (varToString x1) ^ " " ^ (posinfoToString x2) ^ ")"
 
 ParseTreeToString : ParseTreeT → string
 ParseTreeToString (parsed-cmd t) = cmdToString t
@@ -198,8 +198,8 @@ mutual
 
   {-# NO_TERMINATION_CHECK #-}
   norm-term : (x : term) → term
-  norm-term (App (App x1 (Lam x2 x3)) x4) = (norm-term (App  x1 (norm-term (Lam  x2 (norm-term (App  x3 x4) )) )) )
-  norm-term (App (Lam x1 x2) x3) = (norm-term (Lam  x1 (norm-term (App  x2 x3) )) )
+  norm-term (App (App x1 (Lam x2 x3 x4)) x5) = (norm-term (App  x1 (norm-term (Lam  x2 x3 (norm-term (App  x4 x5) )) )) )
+  norm-term (App (Lam x1 x2 x3) x4) = (norm-term (Lam  x1 x2 (norm-term (App  x3 x4) )) )
   norm-term (App x1 (App x2 x3)) = (norm-term (App  (norm-term (App  x1 x2) ) x3) )
   norm-term x = x
 
