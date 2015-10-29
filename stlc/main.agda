@@ -11,6 +11,22 @@ open parsem.pnoderiv stlc.rrs stlc.stlc-rtn
 open import run ptr
 open noderiv {- from run.agda -}
 
+start-pos : term → posinfo
+start-pos (App t t') = start-pos t
+start-pos (Ascribe p _ _ p') = p
+start-pos (Hole p p') = p
+start-pos (Lam p x t) = p
+start-pos (Paren p t p') = p
+start-pos (Var p x p') = p
+
+end-pos : term → posinfo
+end-pos (App t t') = end-pos t'
+end-pos (Ascribe p _ _ p') = p'
+end-pos (Hole p p') = p'
+end-pos (Lam p x t) = end-pos t
+end-pos (Paren p t p') = p'
+end-pos (Var p x p') = p'
+
 escape-string-h : 𝕃 char → 𝕃 char
 escape-string-h ('\n' :: cs) = '\\' :: 'n' :: (escape-string-h cs)
 escape-string-h ('"' :: cs) = '\\' :: '"' :: (escape-string-h cs)
@@ -74,23 +90,30 @@ _≫c'_ = ctxtm-bind'
 
 infixr 2 _≫c_ _≫c'_
 
+ctxtm-fail : ∀{A : Set} → ctxtm A
+ctxtm-fail Γ = nothing , Γ
+
+ctxtm-ok : ctxtm ⊤
+ctxtm-ok = λ c → just triv , c
+
 ctxtm-add-span : ∀{A : Set} → span → ctxtm A → ctxtm A
 ctxtm-add-span s m Γ = m (add-span s Γ)
 
-ctxtm-declare-var : ∀{A : Set} → var → type → ctxtm ⊤
+ctxtm-declare-var : var → type → ctxtm ⊤
 ctxtm-declare-var x tp (mk-ctxt T ss) = just triv , (mk-ctxt (trie-insert T x tp) ss)
 
 ctxtm-undeclare-var : ∀{A : Set} → var → ctxtm ⊤
 ctxtm-undeclare-var x (mk-ctxt T ss) = just triv , (mk-ctxt (trie-remove T x) ss)
 
+ctxtm-error-span : ∀{A : Set} → posinfo → posinfo → string → string → ctxtm A
+ctxtm-error-span p1 p2 label errmsg = ctxtm-add-span (mk-span label p1 p2 [ "error" , errmsg ]) ctxtm-fail
+
 ctxtm-lookup : posinfo → var → posinfo → ctxtm type
 ctxtm-lookup p1 x p2 (mk-ctxt T ss) with trie-lookup T x 
-ctxtm-lookup p1 x p2 (mk-ctxt T ss) | nothing = 
-  nothing , add-span (mk-span "var" p1 p2 [ "error" , "Undefined variable" ]) (mk-ctxt T ss)
+ctxtm-lookup p1 x p2 (mk-ctxt T ss) | nothing = ctxtm-error-span p1 p2 "var" "Undefined variable" (mk-ctxt T ss)
 ctxtm-lookup p1 x p2 (mk-ctxt T ss) | just tp = just tp , (mk-ctxt T ss)
 
-ctxtm-fail : ∀{A : Set} → ctxtm A
-ctxtm-fail Γ = nothing , Γ
+unimplemented = ctxtm-fail
 
 ctxtm-&& : ctxtm 𝔹 → ctxtm 𝔹 → ctxtm 𝔹
 ctxtm-&& c1 c2 = c1 ≫c λ b1 → c2 ≫c λ b2 → ctxtm-return (b1 && b2)
@@ -105,33 +128,39 @@ assert-eq t1 (TpVar p1 x p2) =
   ctxtm-lookup p1 x p2 ≫c assert-eq t1 
 assert-eq (TpVar p1 x p2) t1 = ctxtm-lookup p1 x p2 ≫c assert-eq t1
 
+synth-error : posinfo → posinfo → string → string → ctxtm type
+synth-error p1 p2 label name = ctxtm-error-span p1 p2 label (name ^ " encountered in synthesizing position")
+
+check-error : posinfo → posinfo → string → string → ctxtm type
+check-error p1 p2 label name = ctxtm-error-span p1 p2 label (name ^ " encountered in checking position")
+
 synth-term : term → ctxtm type
 check-term : term → type → ctxtm ⊤ 
-synth-term (App t t₁) = {!!}
-synth-term (Ascribe p1 t tp p2) = {!!}
-synth-term (Hole p1 p2) = {!!}
-synth-term (Lam p x t) = {!!}
-synth-term (Paren p1 t p2) = {!!}
+synth-term (App t t₁) = unimplemented
+synth-term (Ascribe p1 t tp p2) = unimplemented
+synth-term (Hole p1 p2) = synth-error p1 p2 "hole" "Hole"
+synth-term (Lam p x t) = synth-error p (end-pos t) "lambda" "Lambda"
+synth-term (Paren p1 t p2) = synth-term t
 synth-term (Var p1 x p2) = ctxtm-lookup p1 x p2
-check-term (App t t₁) tp = {!!}
-check-term (Ascribe p1 t tp p2) tp' = {!!}
-check-term (Hole p1 p2) tp = {!!}
-check-term (Lam p x t) tp = {!!}
-check-term (Paren p1 t p2) tp = {!!}
+check-term (App t t₁) tp = unimplemented
+check-term (Ascribe p1 t tp p2) tp' = unimplemented
+check-term (Hole p1 p2) tp = ctxtm-add-span (mk-span "hole" p1 p2 []) ctxtm-ok
+check-term (Lam p x t) tp = unimplemented
+check-term (Paren p1 t p2) tp = check-term t tp
 check-term (Var p1 x p2) tp = ctxtm-lookup p1 x p2 ≫c assert-eq tp
 
-process-cmd : ctxt → cmd → ctxt
-process-cmd Γ (DefCheck i1 x trm tp i2) = add-span (mk-span "DefCheck" i1 i2 []) Γ
-process-cmd Γ (DefSynth i1 x trm i2) = add-span (mk-span "DefSynth" i1 i2 []) Γ
-process-cmd Γ (DefTp i1 x tp i2) = add-span (mk-span "DefTp" i1 i2 []) Γ
+process-cmd : cmd → ctxtm ⊤
+process-cmd (DefCheck i1 x trm tp i2) = ctxtm-add-span (mk-span "DefCheck" i1 i2 []) (check-term trm tp)
+process-cmd (DefSynth i1 x trm i2) = synth-term trm ≫c λ tp → ctxtm-add-span (mk-span "DefSynth" i1 i2 []) (ctxtm-declare-var x tp)
+process-cmd (DefTp i1 x tp i2) = ctxtm-add-span (mk-span "DefTp" i1 i2 []) unimplemented
 
-process-cmds : ctxt → cmds → ctxt
-process-cmds Γ (CmdsNext c cs) = process-cmds (process-cmd Γ c) cs 
-process-cmds Γ (CmdsStart c) = process-cmd Γ c
+process-cmds : cmds → ctxtm ⊤
+process-cmds (CmdsNext c cs) = process-cmd c ≫c' process-cmds cs
+process-cmds (CmdsStart c) = process-cmd c
 
 process-start : start → string
-process-start (Cmds cs) with process-cmds empty-ctxt cs
-process-start (Cmds cs) | mk-ctxt T ss = "{\"spans\":[" ^ spans-to-string ss ^ "]}\n"
+process-start (Cmds cs) with process-cmds cs empty-ctxt
+process-start (Cmds cs) | _ , mk-ctxt T ss = "{\"spans\":[" ^ spans-to-string ss ^ "]}\n"
 
 process : Run → string
 process (ParseTree (parsed-start p) :: []) = process-start p
