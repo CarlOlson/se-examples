@@ -5,8 +5,8 @@ while true ; do
 
     if [[ ${NAME:0:6} == "--eval" ]]
     then
-	cl $NAME
+	clrb $NAME
     else
-	cl $NAME --spans
+	clrb $NAME --spans
     fi
 done
