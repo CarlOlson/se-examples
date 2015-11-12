@@ -16,7 +16,7 @@ start-pos (App t t') = start-pos t
 start-pos (Ascribe p _ _ p') = p
 start-pos (Hole p p') = p
 start-pos (Lam p x t) = p
-start-pos (Paren p t p') = p
+start-pos (Parens p t p') = p
 start-pos (Var p x p') = p
 
 end-pos : term → posinfo
@@ -24,8 +24,13 @@ end-pos (App t t') = end-pos t'
 end-pos (Ascribe p _ _ p') = p'
 end-pos (Hole p p') = p'
 end-pos (Lam p x t) = end-pos t
-end-pos (Paren p t p') = p'
+end-pos (Parens p t p') = p'
 end-pos (Var p x p') = p'
+
+type-to-string : type → string
+type-to-string (TpParens tp) = type-to-string tp
+type-to-string (Arrow t1 t2) = "(" ^ type-to-string t1 ^ " → " ^ type-to-string t2 ^ ")"
+type-to-string (TpVar p1 s p2) = s
 
 escape-string-h : 𝕃 char → 𝕃 char
 escape-string-h ('\n' :: cs) = '\\' :: 'n' :: (escape-string-h cs)
@@ -45,9 +50,11 @@ tagged-val = string × string
 tagged-val-to-string : tagged-val → string
 tagged-val-to-string (tag , val) = tag ^ ":" ^ val
 
+type-data : type → tagged-val
+type-data tp = "\"type\"" , "\"" ^ type-to-string tp ^ "\""
+
 data span : Set where
   mk-span : string → posinfo → posinfo → 𝕃 tagged-val {- extra information for the span -} → span
-
 
 span-to-string : span → string
 span-to-string (mk-span name start end extra) = 
@@ -102,7 +109,7 @@ ctxtm-add-span s m Γ = m (add-span s Γ)
 ctxtm-declare-var : var → type → ctxtm ⊤
 ctxtm-declare-var x tp (mk-ctxt T ss) = just triv , (mk-ctxt (trie-insert T x tp) ss)
 
-ctxtm-undeclare-var : ∀{A : Set} → var → ctxtm ⊤
+ctxtm-undeclare-var : var → ctxtm ⊤
 ctxtm-undeclare-var x (mk-ctxt T ss) = just triv , (mk-ctxt (trie-remove T x) ss)
 
 ctxtm-error-span : ∀{A : Set} → posinfo → posinfo → string → string → ctxtm A
@@ -136,17 +143,20 @@ check-error p1 p2 label name = ctxtm-error-span p1 p2 label (name ^ " encountere
 
 synth-term : term → ctxtm type
 check-term : term → type → ctxtm ⊤ 
+synth-term (Parens p1 t p2) = synth-term t 
 synth-term (App t t₁) = unimplemented
 synth-term (Ascribe p1 t tp p2) = unimplemented
 synth-term (Hole p1 p2) = synth-error p1 p2 "hole" "Hole"
 synth-term (Lam p x t) = synth-error p (end-pos t) "lambda" "Lambda"
-synth-term (Paren p1 t p2) = synth-term t
 synth-term (Var p1 x p2) = ctxtm-lookup p1 x p2
+
+check-term t (TpParens tp) = check-term t tp
 check-term (App t t₁) tp = unimplemented
 check-term (Ascribe p1 t tp p2) tp' = unimplemented
-check-term (Hole p1 p2) tp = ctxtm-add-span (mk-span "hole" p1 p2 []) ctxtm-ok
-check-term (Lam p x t) tp = unimplemented
-check-term (Paren p1 t p2) tp = check-term t tp
+check-term (Hole p1 p2) tp = ctxtm-add-span (mk-span "hole" p1 p2 [ type-data tp ]) ctxtm-ok
+check-term (Lam p x t) (Arrow t1 t2) = ctxtm-declare-var x t1 ≫c' check-term t t2 ≫c' ctxtm-undeclare-var x 
+check-term (Lam p x t) (TpVar _ y _) = unimplemented
+check-term (Parens p1 t p2) tp = ctxtm-add-span (mk-span "parens" p1 p2 [ type-data tp ]) (check-term t tp)
 check-term (Var p1 x p2) tp = ctxtm-lookup p1 x p2 ≫c assert-eq tp
 
 process-cmd : cmd → ctxtm ⊤

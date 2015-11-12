@@ -38,7 +38,7 @@ mutual
     Ascribe : posinfo → term → type → posinfo → term
     Hole : posinfo → posinfo → term
     Lam : posinfo → var → term → term
-    Paren : posinfo → term → posinfo → term
+    Parens : posinfo → term → posinfo → term
     Var : posinfo → var → posinfo → term
 
   data type : Set where 
@@ -135,7 +135,7 @@ mutual
   termToString (Ascribe x0 x1 x2 x3) = "(Ascribe" ^ " " ^ (posinfoToString x0) ^ " " ^ (termToString x1) ^ " " ^ (typeToString x2) ^ " " ^ (posinfoToString x3) ^ ")"
   termToString (Hole x0 x1) = "(Hole" ^ " " ^ (posinfoToString x0) ^ " " ^ (posinfoToString x1) ^ ")"
   termToString (Lam x0 x1 x2) = "(Lam" ^ " " ^ (posinfoToString x0) ^ " " ^ (varToString x1) ^ " " ^ (termToString x2) ^ ")"
-  termToString (Paren x0 x1 x2) = "(Paren" ^ " " ^ (posinfoToString x0) ^ " " ^ (termToString x1) ^ " " ^ (posinfoToString x2) ^ ")"
+  termToString (Parens x0 x1 x2) = "(Parens" ^ " " ^ (posinfoToString x0) ^ " " ^ (termToString x1) ^ " " ^ (posinfoToString x2) ^ ")"
   termToString (Var x0 x1 x2) = "(Var" ^ " " ^ (posinfoToString x0) ^ " " ^ (varToString x1) ^ " " ^ (posinfoToString x2) ^ ")"
 
   typeToString : type → string

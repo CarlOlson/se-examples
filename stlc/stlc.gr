@@ -16,7 +16,7 @@ DefTp : cmd -> ! var ows '=type' ows type ows '.' ! .
 
 Lam : term -> ! 'λ' ows var ows '.' ows term .
 App : term -> term ws term .
-Paren : term -> ! '(' ows term ows ')' ! . 
+Parens : term -> ! '(' ows term ows ')' ! . 
 Ascribe : term -> ! '[' ows term ows ':' ows type ows ']' ! .
 Var : term -> ! var ! .
 Hole : term -> ! '●' !.
