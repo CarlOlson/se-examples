@@ -1,4 +1,5 @@
 
+$-w = nil if not $DEBUG
 require 'parser/current'
 
 class RubyProcessor < Parser::AST::Processor
