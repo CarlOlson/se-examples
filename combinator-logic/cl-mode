@@ -3,9 +3,10 @@
 while true ; do
     read NAME || exit
 
-    if [[ ${NAME:0:6} == "--eval" ]]
+    if [[ `echo $NAME | tail -c 7` == "--eval" ]]
     then
-	clrb $NAME
+	read TEMP
+	clrb $NAME "$TEMP"
     else
 	clrb $NAME --spans
     fi
