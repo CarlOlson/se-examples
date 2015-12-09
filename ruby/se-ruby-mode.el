@@ -6,7 +6,8 @@
   (concat (file-name-directory load-file-name) "se_ruby_main.rb")
   "Program to run for se-ruby mode.")
 
-(se-create-mode "Ruby" ruby-mode
+(se-create-mode "se-Ruby" ruby-mode
+  "A structured editing based mode for Ruby files."
   (se-inf-start
    (or (get-buffer-process "*se-ruby-mode*") ;; reuse if existing process
        (start-process "se-ruby-mode" "*se-ruby-mode*"
